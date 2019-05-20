@@ -86,5 +86,6 @@ if __name__ == "__main__":
                 plt.pause(0.1)     
                 print("Epoch %d: loss is %.5f" % (e+1, loss))
         
-        y_hat = sess.run(pred, feed_dict={'x:0': test_x})
+        #y_hat = sess.run(pred, feed_dict={'x:0': test_x})
+        y_hat = sess.run(pred, feed_dict={x: test_x})
         test(y_hat, test_y)
