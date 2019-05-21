@@ -7,8 +7,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from util import get_mnist_data
-from logistic_np_sol import add_one
-from softmax_np_sol import *
+from logistic_np import add_one
+from softmax_np import *
 
 
 if __name__ == "__main__":
@@ -38,24 +38,32 @@ if __name__ == "__main__":
     test_x = add_one(test_x)
    
     # [TODO 2.8] Create TF placeholders to feed train_x and train_y when training
-    x = None
-    y = None
+    x = tf.placeholder(dtype=tf.float64)
+    y = tf.placeholder(dtype=tf.float64)
+
 
     # [TODO 2.8] Create weights (W) using TF variables 
-    w = None 
+    w_shape = (train_x.shape[1], 10)
+    w = tf.Variable(np.random.normal(0, np.sqrt(2. / np.sum(w_shape)), w_shape))
+
 
     # [TODO 2.9] Create a feed-forward operator 
-    pred = None
+    z = tf.matmul(x, w)
+    z_max = tf.transpose([tf.reduce_max(z, axis=1)])
+    z_der = tf.exp(z - z_max)
+    s = tf.transpose([tf.reduce_max(z_der, axis=1)])
+    pred = z_der / s
 
     # [TODO 2.10] Write the cost function
-    cost = 0
+    cost = -tf.reduce_mean(y * tf.log(pred))
 
     # Define hyper-parameters and train-related parameters
     num_epoch = 10000
     learning_rate = 0.01    
 
     # [TODO 2.8] Create an SGD optimizer
-    optimizer = None
+    optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
+
 
     # Some meta parameters
     epochs_to_draw = 10
@@ -73,14 +81,19 @@ if __name__ == "__main__":
 
         for e in range(num_epoch):
             # [TODO 2.8] Compute losses and update weights here
-            train_loss = 0 
-            val_loss = 0 
+            train_loss = sess.run(cost, feed_dict={x: train_x, y: train_y})
+            val_loss = sess.run(cost, feed_dict={x: val_x, y: val_y})
+
             # Update weights
+            _ = sess.run(optimizer, feed_dict={x: train_x, y: train_y})
 
             all_train_loss.append(train_loss)
             all_val_loss.append(val_loss)
 
             # [TODO 2.11] Define your own stopping condition here 
+            if all_val_loss[-1] > all_val_loss[len(all_val_loss) - 2]:
+                break
+
             if (e % epochs_to_draw == epochs_to_draw-1):
                 plot_loss(all_train_loss, all_val_loss)
                 w_  = sess.run(w)
@@ -89,5 +102,6 @@ if __name__ == "__main__":
                 plt.pause(0.1)     
                 print("Epoch %d: train loss: %.5f || val loss: %.5f" % (e+1, train_loss, val_loss))
         
-        y_hat = sess.run(pred, feed_dict={'x:0': test_x})
+        #y_hat = sess.run(pred, feed_dict={'x:0': test_x})
+        y_hat = sess.run(pred, feed_dict={x: test_x})
         test(y_hat, test_y)
