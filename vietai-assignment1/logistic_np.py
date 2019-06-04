@@ -182,9 +182,10 @@ def test(y_hat, test_y):
     ones = y_hat * test_y
     tp = np.count_nonzero(ones)
     fp = np.count_nonzero(y_hat) - tp
+    p = np.count_nonzero(test_y)
 
     precision = tp / (tp + fp)
-    recall = tp / np.count_nonzero(test_y)
+    recall = tp / p
     f1 = 2 * (precision * recall) / (precision + recall)
 
     print("Precision: %.3f" % precision)
