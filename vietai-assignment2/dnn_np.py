@@ -79,7 +79,7 @@ class Layer(object):
            #w_grad = None 
 
         elif(self.activation == 'relu'):
-            delta = delta_dot_w_prev * reLU_grad(self.output)
+            delta = delta_prev * reLU_grad(self.output)
            #w_grad = None 
            
         w_grad = x.T.dot(delta)
@@ -140,10 +140,16 @@ class NeuralNet(object):
 
         # [TODO 1.3]
         # Estimating cross entropy loss from s and y 
-        data_loss = 0
+        #data_loss = 0
+        m = y.shape[0]
+        data_loss = -np.sum(y * np.log(s)) / m
 
         # Estimating regularization loss from all layers
-        reg_loss = 0.0
+        #reg_loss = 0.0
+        sum = 0
+        for i in self.layers:
+            sum += np.sum(i.w ** 2)
+        reg_loss = 0.5 * self.reg * sum
         data_loss += reg_loss
 
         return data_loss
@@ -167,6 +173,7 @@ class NeuralNet(object):
 
         grad_list = []
         grad_list.append(grad_last)
+        delta_prev = delta
         
         for i in range(len(self.layers) - 1)[::-1]:
             prev_layer = self.layers[i+1]
@@ -217,14 +224,14 @@ def test(s, test_y):
     :param test_y: test labels
     """
     if (s.ndim == 2):
-        y_hat = np.argmax(s, axis=1)
+        s = np.argmax(s, axis=1)
     num_class = np.unique(test_y).size
     confusion_mat = np.zeros((num_class, num_class))
 
     for i in range(num_class):
         class_i_idx = test_y == i
         num_class_i = np.sum(class_i_idx)
-        y_hat_i = y_hat[class_i_idx]
+        y_hat_i = s[class_i_idx]
         for j in range(num_class):
             confusion_mat[i,j] = 1.0*np.sum(y_hat_i == j)/num_class_i
 
@@ -271,7 +278,43 @@ def minibatch_train(net, train_x, train_y, cfg):
     :param cfg: Config object
     """
     # [TODO 1.6] Implement mini-batch training
-    pass
+    train_set_x = train_x[:cfg.num_train].copy()
+    train_set_y = train_y[:cfg.num_train].copy()
+    train_set_y = create_one_hot(train_set_y, net.num_class)
+    all_loss = []
+    number_train = train_set_x.shape[0]
+
+    for e in range(cfg.num_epoch):
+        shuffle_index = np.random.permutation(number_train)
+        train_batch_x = train_set_x[shuffle_index].copy()
+        train_batch_y = train_set_y[shuffle_index].copy()
+        all_batch_loss = []
+
+        for i in range(0, number_train, cfg.batch_size):
+            batch_x = train_batch_x[i:i + cfg.batch_size]
+            batch_y = train_batch_y[i:i + cfg.batch_size]
+
+            all_x = net.forward(batch_x)
+            y_hat = all_x[-1]
+            loss = net.compute_loss(batch_y, y_hat)
+            grads = net.backward(batch_y, all_x)
+            net.update_weight(grads, cfg.learning_rate)
+            all_batch_loss.append(loss)
+
+        all_loss = np.mean(all_batch_loss)
+
+        if cfg.visualize and e % cfg.epochs_to_draw == cfg.epochs_to_draw - 1:
+            y_hat = net.forward(train_x[0::3])[-1]
+            visualize_point(train_x[0::3], train_y[0::3], y_hat)
+            plot_loss(all_loss, 2)
+            plt.show()
+            plt.pause(0.01)
+
+        print("Epoch %d: loss is %.5f" % (e + 1, loss))
+    
+
+
+    #pass
     
 
 

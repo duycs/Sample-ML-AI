@@ -45,9 +45,7 @@ def reLU_grad(a):
     :param x: output of ReLU
     """
     #[TODO 1.1]
-    relu_grad = 0
-    if a > 0 : 1
-    return reLU_grad
+    return 1.*(a>0) 
 
 
 def tanh(x):
