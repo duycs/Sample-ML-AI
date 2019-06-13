@@ -131,6 +131,7 @@ def mnist_classification():
 
 
     # Choose activation function
+    #TODO: check error
     activation = tf.nn.relu(feature_columns, name = None)
     
     # Some available gradient descent optimization algorithms 
